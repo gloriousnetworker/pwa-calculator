@@ -1,0 +1,38 @@
+const CACHE_NAME = 'pwa-cache-v3';
+const urlsToCache = [
+    './',
+    './index.html',
+    './style.css',
+    './app.js',
+    './icon.png',
+    './icon-512.png'
+];
+
+self.addEventListener('install', (event) => {
+    event.waitUntil(
+        caches.open(CACHE_NAME).then((cache) => {
+            return cache.addAll(urlsToCache);
+        })
+    );
+});
+
+
+
+self.addEventListener('fetch', (event) => {
+    event.respondWith(
+        caches.match(event.request).then((response) => {
+            return response || fetch(event.request).then((networkResponse) => {
+                // Cache the new request
+                return caches.open(CACHE_NAME).then((cache) => {
+                    cache.put(event.request, networkResponse.clone());
+                    return networkResponse;
+                });
+            });
+        }).catch(() => {
+            // Optionally, serve fallback content for offline
+            if (event.request.mode === 'navigate') {
+                return caches.match('./index.html');
+            }
+        })
+    );
+});
